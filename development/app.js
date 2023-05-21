@@ -139,6 +139,18 @@ function initShaders() {
             }
         }
     };
+    // Set up lighting uniforms
+    var lightDirection = vec3.fromValues(0.0, 1.0, 0.0); // Example: light coming from the top
+    var lightColor = vec3.fromValues(1.0, 1.0, 1.0); // Example: white light color
+    var ambientColor = vec3.fromValues(0.2, 0.2, 0.2); // Example: ambient light color
+
+    var lightDirectionUniform = gl.getUniformLocation(shaderProgram, "uLightDirection");
+    var lightColorUniform = gl.getUniformLocation(shaderProgram, "uLightColor");
+    var ambientColorUniform = gl.getUniformLocation(shaderProgram, "uAmbientColor");
+
+    gl.uniform3fv(lightDirectionUniform, lightDirection);
+    gl.uniform3fv(lightColorUniform, lightColor);
+    gl.uniform3fv(ambientColorUniform, ambientColor);
 }
 
 function drawObject(model) {
@@ -214,7 +226,8 @@ function initBuffers() {
         app.models[mesh].mesh = app.meshes[mesh];
     }
 }
-
+var sideTilt = 0.0;
+var frontTilt = 0.0;
 function animate() {
     app.timeNow = new Date().getTime();
     app.elapsed = app.timeNow - app.lastTime;
@@ -226,18 +239,36 @@ function animate() {
         // do animations
     }
     app.lastTime = app.timeNow;
+    var sideTiltDisplay = document.getElementById("sideTiltDisplay");
+    sideTiltDisplay.innerHTML = "sideTilt = " + sideTilt;
+    var sideTiltDisplay = document.getElementById("frontTiltDisplay");
+    frontTiltDisplay.innerHTML = "frontTilt = " + frontTilt;
 }
 
 function drawScene() {
+    var yRotation = 0 * Math.PI; // Modify the rotation speed if desired, 1.5 for rear view
+    sideTilt = 0.0; // Initial tilt to the side is zero
+    frontTilt = 0.0; // Initial tilt to the front or back is zero
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     mat4.perspective(app.pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 0.01, 1000.0);
     mat4.identity(app.mvMatrix);
     // move the camera
-    mat4.translate(app.mvMatrix, app.mvMatrix, [0, 0, -5]);
-    mat4.rotate(app.mvMatrix, app.mvMatrix, app.time * 0.25 * Math.PI, [0, 1, 0]);
+    mat4.translate(app.mvMatrix, app.mvMatrix, [0, 0, -180]);
+    // mat4.rotate(app.mvMatrix, app.mvMatrix, app.time * 0.5 * Math.PI, [0, 1, 0]);
+    // Rotate around the Y-axis
+    // Rotate around the Y-axis
+    mat4.rotateY(app.mvMatrix, app.mvMatrix, yRotation);
+
+    // Tilt to the side (rotate around the Z-axis)
+    mat4.rotateZ(app.mvMatrix, app.mvMatrix, frontTilt);
+
+    // Tilt to the front or back (rotate around the X-axis)
+    mat4.rotateX(app.mvMatrix, app.mvMatrix, sideTilt);
+
+
     // set up the scene
     mvPushMatrix();
-    drawObject(app.models.suzanne);
+    drawObject(app.models.stingray_unity);
     mvPopMatrix();
 }
 
@@ -253,7 +284,10 @@ function webGLStart(meshes) {
     gl = initWebGL(canvas);
     initShaders();
     initBuffers();
-    gl.clearColor(0.5, 0.5, 0.5, 1.0);
+    gl.clearColor(0.678, 0.847, 0.902, 1.0); // Light blue color
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+
     gl.enable(gl.DEPTH_TEST);
 
     tick();
@@ -271,7 +305,7 @@ window.onload = function() {
             mtl: "/development/models/die.mtl"
         },
         {
-            obj: "/development/models/suzanne.obj",
+            obj: "/development/models/stingray_unity.obj",
             mtl: true
         } // ,
         // {

@@ -1,69 +1,68 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>webgl-obj-loader dev</title>
     <meta charset="UTF-8">
     <script id="shader-fs" type="x-shader/x-fragment">
         precision mediump float;
 
-        varying vec2 vTextureCoord;
-        varying vec3 vTransformedNormal;
-        varying vec4 vPosition;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
 
-        varying vec3 vDiffuse;
-        varying vec3 vSpecular;
-        varying float vSpecularExponent;
+        uniform vec3 uLightDirection;
+        uniform vec3 uLightColor;
+        uniform vec3 uAmbientColor;
 
         void main(void) {
-            vec3 V = -normalize(vPosition.xyz);
-            vec3 L = normalize(vec3(1.0, 1.0, 1.0));
-            vec3 H = normalize(L + V);
-            vec3 N = normalize(vTransformedNormal);
+            vec3 normal = normalize(vNormal);
+            vec3 lightDir = normalize(uLightDirection);
 
-            vec3 color = vDiffuse * dot(N, L) +
-              vSpecular * pow(dot(H, N), vSpecularExponent);
-            gl_FragColor = vec4(color, 1.0);
+            float lambertian = max(dot(normal, lightDir), 0.0);
+            vec3 diffuse = uLightColor * lambertian;
+
+            vec3 ambient = uAmbientColor;
+
+            gl_FragColor = vec4(diffuse + ambient, 1.0);
         }
+
     </script>
+
     <script id="shader-vs" type="x-shader/x-vertex">
         attribute vec3 aVertexPosition;
         attribute vec3 aVertexNormal;
-        attribute vec2 aTextureCoord;
-        attribute vec3 aDiffuse;
-        attribute vec3 aSpecular;
-        attribute float aSpecularExponent;
 
-        uniform mat4 uMVMatrix;
         uniform mat4 uPMatrix;
+        uniform mat4 uMVMatrix;
         uniform mat3 uNMatrix;
 
-        varying vec2 vTextureCoord;
-        varying vec3 vTransformedNormal;
-        varying vec4 vPosition;
-
-        varying vec3 vDiffuse;
-        varying vec3 vSpecular;
-        varying float vSpecularExponent;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
 
         void main(void) {
-            vDiffuse = aDiffuse;
-            vSpecular = aSpecular;
-            vSpecularExponent = aSpecularExponent;
-
-            vPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
-            gl_Position = uPMatrix * vPosition;
-            vTextureCoord = aTextureCoord;
-            vTransformedNormal = uNMatrix * aVertexNormal;
+            vec4 position = uMVMatrix * vec4(aVertexPosition, 1.0);
+            vPosition = position.xyz;
+            vNormal = normalize(uNMatrix * aVertexNormal);
+            gl_Position = uPMatrix * position;
         }
+
     </script>
+
     <script type="text/javascript" src="gl-matrix.js"></script>
     <script type='text/javascript' src='../dist/webgl-obj-loader.js'></script>
     <!-- <script type='text/javascript' src='../dist/webgl-obj-loader.min.js'></script> -->
     <script type='text/javascript' src='app.js'></script>
 </head>
+
 <body style='padding:0; margin:0;'>
-    <div style='margin:0 auto; width:500px;'>
-        <canvas id="mycanvas" style="border: none;" width="500" height="500"></canvas>
+    <div style='margin:0 auto; width:800px;'>
+        <canvas id="mycanvas" style="border: none;" width="800" height="800"></canvas>
+        <div id="sideTiltDisplay">sideTilt = </div>
+        <div id="frontTiltDisplay">frontTilt = </div>
     </div>
+
+
 </body>
+
 </html>
+
